@@ -1,100 +1,125 @@
+// AdminSidebar.jsx – Sporty "Gear Command" Sidebar
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  LayoutDashboard, 
   Package, 
   Layers, 
   ShoppingBag, 
   Users, 
   Box, 
-  BarChart3, 
-  Tag, 
-  Settings,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Zap,
+  Target,
+  Trophy
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const menuItems = [
-  { icon: Package, label: 'Products', path: '/admin/products' },
-  { icon: Layers, label: 'Categories', path: '/admin/categories' },
-  { icon: ShoppingBag, label: 'Orders', path: '/admin/orders' },
-  { icon: Users, label: 'Customers', path: '/admin/customers' },
-  { icon: Box, label: 'Inventory', path: '/admin/inventory' },
+  { icon: Package, label: 'Products', path: '/admin/products', sub: 'Catalog' },
+  { icon: Layers, label: 'Categories', path: '/admin/categories', sub: 'Sectors' },
+  { icon: ShoppingBag, label: 'Orders', path: '/admin/orders', sub: 'Logistics' },
+  { icon: Users, label: 'Customers', path: '/admin/customers', sub: 'Roster' },
+  { icon: Box, label: 'Inventory', path: '/admin/inventory', sub: 'Supply' },
 ];
 
 const AdminSidebar = () => {
   const { handleLogout } = useAuth();
   const navigate = useNavigate();
-  const [isScrolled, setIsScrolled] = React.useState(false);
-
-  React.useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const onLogout = () => {
     handleLogout();
     navigate('/login');
   };
 
-  const stickyTop = isScrolled ? '70px' : '110px';
-  const sidebarHeight = isScrolled ? 'calc(100vh - 70px)' : 'calc(100vh - 110px)';
-
   return (
-    <div 
-      style={{ top: stickyTop, height: sidebarHeight }}
-      className="w-72 shrink-0 bg-primary text-white sticky flex flex-col border-r border-white/5 overflow-y-auto transition-all duration-300 z-40"
-    >
-      {/* Logo Area */}
-      <div className="p-10">
-        <h1 className="text-2xl font-black tracking-tighter m-0 uppercase leading-none italic">
-          DR<span className="text-gray-400 not-italic">⋆</span>P<span className="text-xs align-top ml-1 opacity-40">ADMIN</span>
+    <div className="w-80 shrink-0 bg-[#0D1B2A] text-white flex flex-col border-r-4 border-[#00C896] h-screen sticky top-0 z-[100] overflow-hidden shadow-2xl">
+      
+      {/* ── Brand / Logo ── */}
+      <div className="p-10 pb-16">
+        <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-1 bg-[#00C896] rounded-full" />
+            <span className="text-[10px] font-heading font-black text-[#00C896] uppercase tracking-[0.3em]">Command Center</span>
+        </div>
+        <h1 className="font-heading font-black text-4xl uppercase tracking-tighter leading-none m-0">
+          Gear <span className="text-[#00C896]">HQ</span>
         </h1>
+        <p className="text-[9px] font-heading font-black text-white/30 uppercase tracking-widest mt-2 px-1">Tactical Inventory Operations</p>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-6 space-y-2">
+      {/* ── Navigation ── */}
+      <nav className="flex-1 px-6 space-y-4">
+        <p className="px-4 text-[9px] font-heading font-black text-white/20 uppercase tracking-[0.3em] mb-4">Core Protocols</p>
+        
         {menuItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
-            end={item.path === '/admin'}
             className={({ isActive }) => `
-              group flex items-center justify-between px-5 py-4 rounded-2xl transition-all duration-300
+              group relative flex items-center justify-between px-6 py-5 rounded-[1.5rem] transition-all duration-500
               ${isActive 
-                ? 'bg-white text-primary font-black shadow-[4px_4px_0px_#999]' 
-                : 'text-gray-400 hover:text-white hover:bg-white/5'}
+                ? 'bg-[#00C896] text-[#0D1B2A] shadow-[0_0_30px_rgba(0,200,150,0.2)]' 
+                : 'text-white/40 hover:bg-white/5 hover:text-white'}
             `}
           >
             {({ isActive }) => (
               <>
-                <div className="flex items-center gap-4">
-                  <item.icon size={20} strokeWidth={isActive ? 3 : 2} />
-                  <span className="text-sm uppercase tracking-widest font-bold">{item.label}</span>
+                <div className="flex items-center gap-5 relative z-10">
+                  <div className={`p-2 rounded-lg transition-colors ${isActive ? 'bg-[#0D1B2A] text-[#00C896]' : 'bg-white/5 text-[#00C896]'}`}>
+                    <item.icon size={20} strokeWidth={3} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-heading font-black uppercase tracking-widest">{item.label}</span>
+                    <span className={`text-[9px] font-heading font-black uppercase tracking-widest transition-opacity ${isActive ? 'opacity-50' : 'opacity-0 group-hover:opacity-100'}`}>
+                        {item.sub}
+                    </span>
+                  </div>
                 </div>
-                <ChevronRight 
-                  size={14} 
-                  className={`transition-transform duration-300 transform ${isActive ? 'rotate-90 text-primary' : 'group-hover:translate-x-1 opacity-0 group-hover:opacity-100'}`} 
-                />
+
+                <div className={`transition-all duration-500 ${isActive ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100'}`}>
+                    <ChevronRight size={16} strokeWidth={4} />
+                </div>
+
+                {/* Background Glow on Active */}
+                {isActive && (
+                    <motion.div 
+                        layoutId="activeGlow"
+                        className="absolute inset-0 bg-[#00C896] rounded-[1.5rem] -z-10"
+                        transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+                    />
+                )}
               </>
             )}
           </NavLink>
         ))}
       </nav>
 
-      {/* Logout */}
-      <div className="p-6 mt-10">
-        <button 
-          onClick={onLogout}
-          className="w-full flex items-center gap-4 px-5 py-4 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-2xl transition-all duration-300 font-bold uppercase tracking-widest text-xs border-none bg-none cursor-pointer"
-        >
-          <LogOut size={18} />
-          Logout
-        </button>
+      {/* ── Deployment Summary (Visual) ── */}
+      <div className="px-10 py-10 bg-[#0D1B2A] border-t border-white/5 mt-4 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all">
+              <Trophy size={80} strokeWidth={1} />
+          </div>
+          <div className="relative z-10">
+            <p className="text-[10px] font-heading font-black text-white/30 uppercase tracking-widest mb-4">Mission Status</p>
+            <div className="flex items-center gap-3 mb-6">
+                <div className="w-2 h-2 rounded-full bg-[#00C896] animate-pulse" />
+                <span className="text-[11px] font-heading font-black text-white uppercase tracking-widest">Active Link</span>
+            </div>
+            
+            <button 
+                onClick={onLogout}
+                className="w-full flex items-center justify-between px-6 py-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-2xl transition-all duration-300 font-heading font-black uppercase tracking-widest text-[10px] border-none bg-none cursor-pointer group/btn"
+            >
+                <div className="flex items-center gap-3">
+                    <LogOut size={16} strokeWidth={3} />
+                    <span>Terminate Session</span>
+                </div>
+                <Zap size={14} fill="currentColor" className="opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+            </button>
+          </div>
       </div>
+
     </div>
   );
 };

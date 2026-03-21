@@ -1,23 +1,34 @@
-// ProfilePage.jsx – full profile with order history, addresses, payment methods
+// src/pages/ProfilePage.jsx – Sporty Revamp
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Package, MapPin, CreditCard, LogOut, ChevronRight, Plus, Check, Edit2, Trash2, ShoppingBag } from 'lucide-react';
+import { User, Package, MapPin, CreditCard, LogOut, ChevronRight, Plus, Check, Edit2, Trash2, ShoppingBag, ShieldCheck, Zap, Trophy, ShieldAlert, History } from 'lucide-react';
 import { profileApi, orderApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const fmt = (p) => `₹${Number(p).toLocaleString('en-IN')}`;
 
 const TABS = [
-  { id: 'profile', label: 'Profile Settings', icon: User },
-  { id: 'orders', label: 'Order History', icon: Package },
-  { id: 'addresses', label: 'Address Book', icon: MapPin },
-  { id: 'payments', label: 'Payment Methods', icon: CreditCard },
+  { id: 'profile', label: 'Identity', icon: User },
+  { id: 'orders', label: 'History', icon: History },
+  { id: 'addresses', label: 'Logistics', icon: MapPin },
+  { id: 'payments', label: 'Vault', icon: CreditCard },
 ];
 
 const StatusBadge = ({ status }) => {
-  const colors = { Delivered: 'bg-green-50 text-green-600', 'In Transit': 'bg-blue-50 text-blue-600', Pending: 'bg-yellow-50 text-yellow-700', Cancelled: 'bg-red-50 text-red-600' };
-  return <span className={`text-xs font-semibold px-3 py-1 rounded-full ${colors[status] || 'bg-gray-100 text-gray-600'}`}>{status}</span>;
+  const configs = { 
+    Delivered: { bg: 'bg-[#00C896]/10', text: 'text-[#00C896]', icon: Check }, 
+    'In Transit': { bg: 'bg-blue-500/10', text: 'text-blue-500', icon: Package }, 
+    Pending: { bg: 'bg-yellow-500/10', text: 'text-yellow-500', icon: Zap }, 
+    Cancelled: { bg: 'bg-red-500/10', text: 'text-red-500', icon: ShieldAlert } 
+  };
+  const config = configs[status] || { bg: 'bg-gray-100', text: 'text-gray-400', icon: ShieldCheck };
+  const Icon = config.icon;
+  return (
+    <span className={`text-[9px] font-heading font-black uppercase tracking-widest px-4 py-1.5 rounded-full flex items-center gap-2 border border-current/20 ${config.bg} ${config.text}`}>
+       <Icon size={10} strokeWidth={4} /> {status}
+    </span>
+  );
 };
 
 const ProfilePage = () => {
@@ -80,7 +91,7 @@ const ProfilePage = () => {
   };
 
   const handleCancelOrder = async (orderId) => {
-    if (!window.confirm('Are you sure you want to cancel this order?')) return;
+    if (!window.confirm('Confirm order cancellation?')) return;
     try {
       const res = await orderApi.cancel(orderId);
       if (res.success) {
@@ -88,7 +99,15 @@ const ProfilePage = () => {
       }
     } catch (err) {
       console.error('Cancel order failed:', err);
-      alert('Failed to cancel order.');
+    }
+  };
+
+  const handleDeleteAddress = async (id) => {
+    try {
+      const res = await profileApi.deleteAddress(id);
+      if (res.success) setAddresses(prev => prev.filter(a => a.id !== id));
+    } catch (err) {
+      console.error('Failed to delete address:', err);
     }
   };
 
@@ -105,151 +124,157 @@ const ProfilePage = () => {
     }
   };
 
-  const handleDeleteAddress = async (id) => {
-    try {
-      const res = await profileApi.deleteAddress(id);
-      if (res.success) {
-        setAddresses(prev => prev.filter(a => a.id !== id));
-      }
-    } catch (err) {
-      console.error('Failed to delete address:', err);
-    }
-  };
-
   const initials = profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U';
 
   if (loading || authLoading) {
-    return <div className="min-h-[60vh] flex items-center justify-center font-black uppercase tracking-widest text-gray-300">Loading your profile...</div>;
+    return <div className="min-h-[70vh] flex items-center justify-center font-heading font-black uppercase tracking-widest text-[#00C896]/30 animate-pulse">Syncing Dashboard...</div>;
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      className="w-full max-w-[1440px] mx-auto px-5 md:px-10 py-16">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full max-w-[1440px] mx-auto px-5 md:px-10 py-16">
+      
+      <div className="flex flex-col lg:flex-row gap-12 items-start">
+        {/* Sidebar Nav Dashboard */}
+        <aside className="w-full lg:w-80 shrink-0 lg:sticky lg:top-24">
+          <div className="bg-[#0D1B2A] rounded-[2.5rem] p-8 overflow-hidden relative group border-b-4 border-[#00C896]">
+             <div className="absolute top-0 right-0 w-32 h-32 bg-[#00C896]/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-[#00C896]/20 transition-all duration-700" />
+             
+             <div className="flex flex-col items-center pb-8 border-b border-white/5 mb-8 relative z-10">
+                <div className="w-24 h-24 bg-[#00C896] text-[#0D1B2A] rounded-3xl rotate-6 flex items-center justify-center text-3xl font-heading font-black mb-6 shadow-2xl transition-transform group-hover:rotate-0">
+                  {initials}
+                </div>
+                <h3 className="font-heading font-black text-2xl tracking-tighter uppercase text-white mb-2">{profile?.name || 'Athlete'}</h3>
+                <p className="font-heading font-black text-[10px] text-[#00C896] uppercase tracking-[0.2em]">Rank: Elite Squad</p>
+             </div>
 
-      <div className="flex flex-col lg:flex-row gap-10">
-        {/* Sidebar */}
-        <aside className="w-full lg:w-72 shrink-0">
-          {/* Avatar */}
-          <div className="flex flex-col items-center pb-8 border-b border-gray-100 mb-6 font-sans">
-            <div className="w-20 h-20 bg-primary text-white rounded-full flex items-center justify-center text-2xl font-black mb-4 shadow-[4px_6px_0px_#555]">
-              {initials}
-            </div>
-            <h3 className="font-black text-xl tracking-tighter uppercase">{profile?.name || 'User'}</h3>
-            <p className="text-gray-400 text-xs mt-1 font-bold uppercase tracking-widest">{profile?.email}</p>
-          </div>
-
-          {/* Nav */}
-          <nav className="flex flex-col gap-2">
-            {TABS.map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all text-left cursor-pointer border-2
-                    ${activeTab === tab.id
-                      ? 'bg-primary text-white border-primary shadow-[4px_4px_0px_#555]'
-                      : 'text-gray-400 border-transparent hover:border-primary hover:text-primary'
-                    }`}
+             <nav className="flex flex-col gap-3 relative z-10">
+                {TABS.map(tab => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-4 px-6 py-4 rounded-xl text-[10px] font-heading font-black uppercase tracking-widest transition-all text-left border-2
+                        ${isActive
+                          ? 'bg-white text-[#0D1B2A] border-white shadow-xl translate-x-1'
+                          : 'text-white/40 border-white/5 hover:border-white/10 hover:text-white hover:translate-x-1'
+                        }`}
+                    >
+                      <Icon size={18} strokeWidth={isActive ? 3 : 2} className={isActive ? 'text-[#00C896]' : ''} />
+                      {tab.label}
+                      {isActive && <Trophy size={14} fill="currentColor" className="ml-auto text-[#00C896]" />}
+                    </button>
+                  );
+                })}
+                <button 
+                  onClick={() => { handleLogout(); navigate('/'); }}
+                  className="flex items-center gap-4 px-6 py-4 rounded-xl text-[10px] font-heading font-black uppercase tracking-widest text-[#ff4d4d]/60 border-2 border-transparent hover:bg-[#ff4d4d]/10 hover:text-[#ff4d4d] transition-all text-left mt-8"
                 >
-                  <Icon size={18} />
-                  {tab.label}
-                  {activeTab === tab.id && <ChevronRight size={14} className="ml-auto" />}
+                  <LogOut size={18} /> Logout Session
                 </button>
-              );
-            })}
-            <button 
-              onClick={() => { handleLogout(); navigate('/'); }}
-              className="flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-widest text-red-500 hover:bg-red-50 border-2 border-transparent hover:border-red-100 transition-all text-left cursor-pointer mt-6"
-            >
-              <LogOut size={18} /> Logout
-            </button>
-          </nav>
+             </nav>
+          </div>
         </aside>
 
-        {/* Content */}
+        {/* Content Area */}
         <main className="flex-1 min-w-0">
           <AnimatePresence mode="wait">
-            {/* ─── Profile Settings ─── */}
+            {/* ─── Profile Details ─── */}
             {activeTab === 'profile' && (
               <motion.div key="profile" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>
-                <h2 className="text-3xl font-black tracking-tighter uppercase mb-10">Profile Settings</h2>
-                <div className="flex flex-col gap-8 max-w-2xl bg-gray-50/50 p-8 rounded-3xl border-2 border-gray-100">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex items-end gap-3 mb-12">
+                   <h2 className="font-heading font-black text-5xl tracking-tighter uppercase leading-none">Athlete <span className="text-[#00C896]">Identity</span></h2>
+                   <div className="h-1 flex-1 bg-gray-100 mb-2 rounded-full hidden md:block" />
+                </div>
+
+                <div className="bg-white border-2 border-gray-100 rounded-[2.5rem] p-8 md:p-12 shadow-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                     <div className="flex flex-col gap-3">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Full Name</label>
+                      <label className="text-[10px] font-heading font-black uppercase tracking-widest text-gray-300 pl-1">Legal Name</label>
                       <input type="text" value={profile?.name || ''}
                         onChange={e => setProfile(p => ({ ...p, name: e.target.value }))}
-                        className="bg-white border-2 border-gray-100 rounded-2xl px-5 py-4 font-sans outline-none focus:border-primary transition-colors text-sm font-bold shadow-sm" />
+                        className="bg-gray-50 border-2 border-gray-100 rounded-2xl px-6 py-4 font-heading font-black uppercase text-sm outline-none focus:border-[#00C896] transition-all" />
                     </div>
                     <div className="flex flex-col gap-3">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Phone Number</label>
+                      <label className="text-[10px] font-heading font-black uppercase tracking-widest text-gray-300 pl-1">Mobile Access</label>
                       <input type="tel" value={profile?.phone || ''}
                         onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
-                        placeholder="+91 98765 43210"
-                        className="bg-white border-2 border-gray-100 rounded-2xl px-5 py-4 font-sans outline-none focus:border-primary transition-colors text-sm font-bold shadow-sm" />
+                        placeholder="+91 MOBILE"
+                        className="bg-gray-50 border-2 border-gray-100 rounded-2xl px-6 py-4 font-heading font-black uppercase text-sm outline-none focus:border-[#00C896] transition-all placeholder:text-gray-200" />
+                    </div>
+                    <div className="flex flex-col gap-3 md:col-span-2">
+                       <label className="text-[10px] font-heading font-black uppercase tracking-widest text-gray-300 pl-1">Registry Email</label>
+                       <input type="email" value={profile?.email || ''} disabled
+                        className="bg-gray-50 border-2 border-gray-50 rounded-2xl px-6 py-4 font-heading font-black uppercase text-sm text-gray-200 cursor-not-allowed" />
+                       <div className="flex items-center gap-2 mt-1 px-1">
+                          <ShieldCheck size={12} className="text-gray-200" />
+                          <p className="text-[9px] text-gray-200 font-heading font-black uppercase tracking-widest">Permanent Authentication Protocol Locked</p>
+                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-3">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Email Address</label>
-                    <input type="email" value={profile?.email || ''} disabled
-                      className="bg-gray-100 border-2 border-gray-100 rounded-2xl px-5 py-4 font-sans text-gray-400 text-sm font-bold cursor-not-allowed" />
-                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest pl-2">Email cannot be changed for security</p>
-                  </div>
+                  
                   <button onClick={handleSaveProfile} disabled={saving}
-                    className={`w-fit flex items-center gap-3 px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all cursor-pointer border-2
-                      ${saved ? 'bg-green-500 text-white border-green-500' : 'bg-primary text-white border-primary shadow-[4px_6px_0px_#111] hover:-translate-y-1'}`}>
-                    {saved ? <><Check size={18} /> Profile Updated</> : saving ? 'Updating...' : 'Save Changes'}
+                    className={`flex items-center gap-3 px-12 py-5 rounded-2xl font-heading font-black uppercase tracking-widest text-xs transition-all shadow-xl active:scale-95
+                      ${saved ? 'bg-[#00C896] text-[#0D1B2A]' : 'bg-[#0D1B2A] text-white hover:bg-[#1a2d42]'}`}>
+                    {saved ? <><Check size={18} strokeWidth={4} /> Identity Saved</> : saving ? 'Transmitting...' : 'Commit Changes'}
                   </button>
                 </div>
               </motion.div>
             )}
 
-            {/* ─── Orders ─── */}
+            {/* ─── Orders History ─── */}
             {activeTab === 'orders' && (
               <motion.div key="orders" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>
-                <h2 className="text-3xl font-black tracking-tighter uppercase mb-10">Order History</h2>
+                <div className="flex items-end gap-3 mb-12">
+                   <h2 className="font-heading font-black text-5xl tracking-tighter uppercase leading-none">History <span className="text-[#00C896]">Log</span></h2>
+                   <div className="h-1 flex-1 bg-gray-100 mb-2 rounded-full hidden md:block" />
+                </div>
+
                 {orders.length === 0 ? (
-                  <div className="text-center py-24 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
-                    <ShoppingBag size={48} className="mx-auto mb-4 text-gray-200" />
-                    <p className="text-gray-400 font-black uppercase tracking-widest text-xs">No orders found yet</p>
+                  <div className="text-center py-32 bg-gray-50 rounded-[2.5rem] border-4 border-dashed border-gray-100 flex flex-col items-center">
+                    <ShoppingBag size={64} strokeWidth={1} className="mb-6 text-gray-200" />
+                    <p className="font-heading font-black uppercase tracking-widest text-sm text-gray-300">Deployment queue is currently empty</p>
+                    <Link to="/products" className="mt-8 font-heading font-black text-xs text-[#00C896] uppercase hover:underline">Launch Selection</Link>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-6">
+                  <div className="space-y-8">
                     {orders.map(order => (
-                      <div key={order.id} className="bg-white border-2 border-gray-100 rounded-3xl p-6 hover:border-primary transition-colors shadow-sm group">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-gray-50 pb-6">
-                          <div>
-                            <p className="font-black text-sm tracking-tight uppercase">Order #{order.id.slice(-8)}</p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-1">{new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                          </div>
-                          <div className="flex items-center gap-6">
-                            <div className="text-right">
-                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Total Amount</p>
-                              <p className="font-black text-lg">{fmt(order.total_amount || order.total || 0)}</p>
-                            </div>
-                            <StatusBadge status={order.status} />
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-6">
-                          {order.order_items?.map((item, i) => (
-                            <div key={i} className="flex items-center gap-4 bg-gray-50 pr-4 rounded-xl overflow-hidden border border-gray-100">
-                              <img src={item.products?.image_url} alt="" className="w-16 h-16 object-cover" />
-                              <div>
-                                <p className="text-[10px] font-black uppercase tracking-tight">{item.products?.name}</p>
-                                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Qty: {item.quantity}</p>
+                      <div key={order.id} className="bg-white border-2 border-gray-100 rounded-[2rem] p-8 hover:border-[#00C896]/30 transition-all shadow-sm group">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-8 pb-8 border-b border-gray-50">
+                           <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-[#0D1B2A]">
+                                 <Package size={20} />
                               </div>
-                            </div>
-                          ))}
+                              <div>
+                                 <p className="font-heading font-black text-xs uppercase tracking-tight">Deployment #{order.id.slice(-8).toUpperCase()}</p>
+                                 <p className="text-[10px] text-gray-300 font-heading font-black uppercase tracking-widest mt-0.5">{new Date(order.created_at).toLocaleDateString()}</p>
+                              </div>
+                           </div>
+                           <div className="flex items-center gap-8">
+                              <div className="text-right">
+                                 <p className="text-[10px] text-gray-300 font-heading font-black uppercase tracking-widest mb-1">Commit Total</p>
+                                 <p className="font-heading font-black text-2xl text-[#0D1B2A]">{fmt(order.total_amount || 0)}</p>
+                              </div>
+                              <StatusBadge status={order.status} />
+                           </div>
                         </div>
-                        {order.status !== 'delivered' && order.status !== 'cancelled' && (
-                          <div className="mt-6 flex justify-end">
-                            <button
-                              onClick={() => handleCancelOrder(order.id)}
-                              className="px-4 py-2 border-2 border-red-100 text-red-500 hover:bg-red-50 hover:border-red-200 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors cursor-pointer"
-                            >
-                              Cancel Order
-                            </button>
+                        
+                        <div className="flex flex-wrap gap-4 mb-4">
+                           {order.order_items?.map((it, i) => (
+                             <div key={i} className="flex items-center gap-4 bg-gray-50 border border-gray-100 p-3 rounded-2xl group-hover:bg-white transition-all">
+                                <img src={it.products?.image_url} className="w-14 h-14 object-cover rounded-xl" alt="" />
+                                <div className="pr-4">
+                                   <p className="font-heading font-black text-[10px] uppercase truncate max-w-[120px]">{it.products?.name}</p>
+                                   <p className="text-[9px] font-heading font-black text-[#00C896] uppercase tracking-widest mt-0.5">SZ {it.size || '?'} • QTY {it.quantity}</p>
+                                </div>
+                             </div>
+                           ))}
+                        </div>
+
+                        {['pending', 'processing'].includes(order.status?.toLowerCase()) && (
+                          <div className="flex justify-end pt-4">
+                             <button onClick={() => handleCancelOrder(order.id)} className="text-[10px] font-heading font-black uppercase underline decoration-2 underline-offset-4 text-red-500 hover:text-red-700 transition-colors">Abort Order</button>
                           </div>
                         )}
                       </div>
@@ -259,97 +284,100 @@ const ProfilePage = () => {
               </motion.div>
             )}
 
-            {/* ─── Addresses ─── */}
+            {/* ─── Logistics (Addresses) ─── */}
             {activeTab === 'addresses' && (
               <motion.div key="addresses" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>
-                <div className="flex items-center justify-between mb-10">
-                  <h2 className="text-3xl font-black tracking-tighter uppercase">Address Book</h2>
-                  <button onClick={() => setShowAddressForm(true)}
-                    className="flex items-center gap-3 px-6 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest border-2 border-primary shadow-[4px_6px_0px_#111] hover:-translate-y-1 transition-all cursor-pointer">
-                    <Plus size={16} /> New Address
-                  </button>
+                <div className="flex items-end justify-between mb-12 gap-3">
+                   <h2 className="font-heading font-black text-5xl tracking-tighter uppercase leading-none">Logistics <span className="text-[#00C896]">Hub</span></h2>
+                   <button onClick={() => setShowAddressForm(true)} className="w-14 h-14 bg-[#00C896] text-[#0D1B2A] flex items-center justify-center rounded-2xl shadow-xl hover:scale-110 active:scale-95 transition-all">
+                      <Plus size={24} strokeWidth={3} />
+                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {addresses.map(addr => (
-                    <div key={addr.id} className={`bg-white border-2 rounded-3xl p-8 relative shadow-sm transition-all ${addr.is_default ? 'border-primary' : 'border-gray-100 hover:border-gray-200'}`}>
-                      {addr.is_default && <span className="absolute top-6 right-6 text-[9px] font-black bg-neon text-primary px-3 py-1 rounded-full uppercase tracking-widest">Default Address</span>}
-                      <p className="font-black text-base uppercase mb-3 pr-20">{addr.full_name}</p>
-                      <p className="text-sm font-medium text-gray-500 leading-relaxed mb-4">{addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}<br />{addr.city}, {addr.state} – {addr.pincode}</p>
-                      <div className="flex items-center gap-2 text-xs text-gray-400 font-bold mb-6 uppercase tracking-widest">
-                         <span className="text-primary font-black">MOBILE:</span> {addr.phone}
-                      </div>
-                      <div className="flex gap-4 pt-4 border-t border-gray-50">
-                        <button className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-primary transition-colors cursor-pointer"><Edit2 size={13} /> Edit</button>
-                        <button onClick={() => handleDeleteAddress(addr.id)} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-red-500 transition-colors cursor-pointer"><Trash2 size={13} /> Remove</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Add Address Form */}
-                {showAddressForm && (
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                    className="mt-10 bg-gray-50 rounded-3xl p-8 border-2 border-dashed border-gray-300">
-                    <h3 className="text-xl font-black uppercase tracking-tighter mb-8">Add New Address</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {['full_name', 'phone', 'line1', 'line2', 'city', 'state', 'pincode'].map(field => (
-                        <div key={field} className={`flex flex-col gap-2 ${field === 'line1' || field === 'line2' ? 'md:col-span-2' : ''}`}>
-                          <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">{field.replace('_', ' ')}</label>
-                          <input type="text" value={newAddress[field]}
-                            placeholder={`Enter ${field.replace('_', ' ')}`}
-                            onChange={e => setNewAddress(p => ({ ...p, [field]: e.target.value }))}
-                            className="bg-white border-2 border-gray-200 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-primary transition-colors shadow-sm" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                   {addresses.map(addr => (
+                     <div key={addr.id} className={`bg-white border-2 rounded-[2rem] p-8 relative shadow-sm transition-all group ${addr.is_default ? 'border-[#009b74] bg-[#00C896]/5' : 'border-gray-100 hover:border-[#00C896]/20'}`}>
+                        <div className="flex items-start justify-between mb-6">
+                           <div className="w-10 h-10 bg-gray-100 group-hover:bg-white rounded-xl flex items-center justify-center text-gray-400 group-hover:text-[#0D1B2A] transition-colors">
+                              <MapPin size={18} />
+                           </div>
+                           {addr.is_default && <span className="text-[9px] font-heading font-black bg-[#00C896] text-[#0D1B2A] px-3 py-1 rounded-full uppercase">Primary</span>}
                         </div>
-                      ))}
-                    </div>
-                    <div className="flex gap-4 mt-10">
-                      <button onClick={handleAddAddress}
-                        className="flex-1 md:flex-none px-10 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest border-2 border-primary shadow-[4px_6px_0px_#111] hover:-translate-y-1 transition-all cursor-pointer">
-                        Save Address
-                      </button>
-                      <button onClick={() => setShowAddressForm(false)}
-                        className="flex-1 md:flex-none px-10 py-4 bg-white text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest border-2 border-gray-200 hover:border-primary hover:text-primary transition-all cursor-pointer">
-                        Cancel
-                      </button>
-                    </div>
+                        <h4 className="font-heading font-black text-xl uppercase tracking-tighter mb-3">{addr.full_name}</h4>
+                        <p className="text-xs font-medium text-gray-400 leading-relaxed font-sans mb-10">{addr.line1}, {addr.line2 && addr.line2 + ','} {addr.city}, {addr.state} [{addr.pincode}]</p>
+                        <div className="flex items-center justify-between pt-6 border-t border-gray-50">
+                           <div className="text-[10px] font-heading font-black uppercase text-gray-200">{addr.phone}</div>
+                           <div className="flex gap-4">
+                              <button className="text-[10px] font-heading font-black text-[#00C896] uppercase hover:underline decoration-2">Edit</button>
+                              <button onClick={() => handleDeleteAddress(addr.id)} className="text-[10px] font-heading font-black text-red-400 uppercase hover:underline decoration-2">Purge</button>
+                           </div>
+                        </div>
+                     </div>
+                   ))}
+                </div>
+
+                {showAddressForm && (
+                  <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="mt-12 bg-gray-50 p-10 rounded-[2.5rem] border-4 border-dashed border-gray-200">
+                     <h3 className="font-heading font-black text-2xl uppercase mb-8">Register New Entry</h3>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {['full_name', 'phone', 'line1', 'line2', 'city', 'state', 'pincode'].map(f => (
+                           <div key={f} className={`flex flex-col gap-2 ${f === 'line1' || f === 'line2' ? 'md:col-span-2' : ''}`}>
+                             <label className="text-[10px] font-heading font-black uppercase tracking-widest text-gray-300 pl-1">{f.replace('_', ' ')}</label>
+                             <input type="text" value={newAddress[f]} onChange={e => setNewAddress(p => ({ ...p, [f]: e.target.value }))} className="bg-white border-2 border-gray-100 rounded-xl px-5 py-4 font-heading font-black text-xs uppercase outline-none focus:border-[#00C896] transition-all" />
+                           </div>
+                        ))}
+                     </div>
+                     <div className="flex gap-6 mt-12">
+                        <button onClick={handleAddAddress} className="bg-[#0D1B2A] text-white px-10 py-4 rounded-xl font-heading font-black uppercase text-xs tracking-widest hover:bg-[#00C896] hover:text-[#0D1B2A] transition-all shadow-xl">Commit Address</button>
+                        <button onClick={() => setShowAddressForm(false)} className="text-gray-300 font-heading font-black text-xs uppercase tracking-widest hover:text-[#0D1B2A]">Discard</button>
+                     </div>
                   </motion.div>
                 )}
               </motion.div>
             )}
 
-            {/* ─── Payment Methods ─── */}
+            {/* ─── Vault (Payments) ─── */}
             {activeTab === 'payments' && (
               <motion.div key="payments" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>
-                <h2 className="text-3xl font-black tracking-tighter uppercase mb-10">Payment Methods</h2>
-                <div className="flex flex-col gap-4 max-w-xl">
-                  {payments.length === 0 ? (
-                    <div className="text-center py-16 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 mb-6">
-                       <CreditCard size={32} className="mx-auto mb-3 text-gray-200" />
-                       <p className="text-[10px] font-black uppercase tracking-widest text-gray-300">No saved cards found</p>
-                    </div>
-                  ) : (
-                    payments.map(pm => (
-                      <div key={pm.id} className={`bg-white border-2 rounded-2xl p-6 flex items-center justify-between shadow-sm ${pm.is_default ? 'border-primary' : 'border-gray-100 hover:border-gray-200'}`}>
-                        <div className="flex items-center gap-5">
-                          <div className="w-14 h-10 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center">
-                            <CreditCard size={20} className="text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-black text-sm uppercase tracking-tight">{pm.brand} Card •••• {pm.last4}</p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Expires {pm.exp_month}/{pm.exp_year.toString().slice(-2)}</p>
-                          </div>
+                <div className="flex items-end gap-3 mb-12">
+                   <h2 className="font-heading font-black text-5xl tracking-tighter uppercase leading-none">The <span className="text-[#00C896]">Vault</span></h2>
+                   <div className="h-1 flex-1 bg-gray-100 mb-2 rounded-full hidden md:block" />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   {payments.map(pm => (
+                     <div key={pm.id} className={`bg-[#0D1B2A] rounded-2xl p-8 relative overflow-hidden group border-b-4 ${pm.is_default ? 'border-[#00C896]' : 'border-white/5 shadow-sm'}`}>
+                        <div className="absolute top-0 right-0 p-4 text-[#00C896]/20 group-hover:text-[#00C896]/50 transition-colors">
+                           <CreditCard size={48} strokeWidth={1} />
                         </div>
-                        {pm.is_default && <span className="text-[9px] font-black bg-neon text-primary px-3 py-1 rounded-full uppercase tracking-widest">Default</span>}
+                        <div className="relative z-10">
+                           <p className="text-white/30 font-heading font-black text-[10px] uppercase tracking-widest mb-6">{pm.brand} ELITE CHIP</p>
+                           <p className="text-white font-heading font-black text-xl tracking-[0.3em] mb-8">•••• •••• •••• {pm.last4}</p>
+                           <div className="flex justify-between items-end">
+                              <div>
+                                 <p className="text-white/20 text-[8px] uppercase font-heading font-black tracking-widest mb-1">Expiration</p>
+                                 <p className="text-white font-heading font-black text-xs tracking-widest">{pm.exp_month}/{pm.exp_year}</p>
+                              </div>
+                              {pm.is_default && <span className="text-[9px] font-heading font-black bg-[#00C896] text-[#0D1B2A] px-3 py-1 rounded-full uppercase">Primary Activation</span>}
+                           </div>
+                        </div>
+                     </div>
+                   ))}
+                   
+                   <button className="border-4 border-dashed border-gray-100 rounded-2xl p-8 flex flex-col items-center justify-center gap-4 text-gray-200 hover:border-[#00C896] hover:text-[#00C896] transition-all group">
+                      <div className="w-14 h-14 bg-gray-50 rounded-[1.5rem] flex items-center justify-center group-hover:bg-[#00C896]/10 transition-all">
+                         <Plus size={32} />
                       </div>
-                    ))
-                  )}
-                  <div className="border-4 border-dashed border-gray-100 rounded-3xl p-8 flex flex-col items-center justify-center gap-4 text-gray-300 hover:border-primary hover:text-primary transition-all cursor-pointer group">
-                    <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-primary/5">
-                       <Plus size={24} />
-                    </div>
-                    <span className="text-xs font-black uppercase tracking-widest">Add New Payment Method</span>
-                  </div>
+                      <span className="font-heading font-black text-xs uppercase tracking-[0.2em]">Authorize New Channel</span>
+                   </button>
+                </div>
+                
+                <div className="mt-16 bg-[#ff4d4d]/5 border border-[#ff4d4d]/10 p-6 rounded-2xl flex gap-4 items-start">
+                   <ShieldAlert size={20} className="text-[#ff4d4d] shrink-0" />
+                   <div>
+                      <h5 className="font-heading font-black text-xs uppercase text-[#ff4d4d] mb-1">Security Notice</h5>
+                      <p className="text-[10px] text-[#ff4d4d]/40 font-medium font-sans">Raw card data is never stored on SportZone kernels. All tokens are transmitted via PCI-DSS encrypted pipelines.</p>
+                   </div>
                 </div>
               </motion.div>
             )}

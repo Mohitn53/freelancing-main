@@ -7,10 +7,10 @@ const AdminRoute = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="font-black uppercase tracking-widest text-xs text-gray-400">Verifying Admin Access</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#0D1B2A]">
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-16 h-16 border-4 border-[#00C896] border-t-transparent rounded-full animate-spin shadow-[0_0_20px_rgba(0,200,150,0.3)]"></div>
+          <p className="font-heading font-black uppercase tracking-[0.4em] text-[10px] text-[#00C896]">Verifying Secure Link...</p>
         </div>
       </div>
     );
