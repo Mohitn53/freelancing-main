@@ -40,7 +40,9 @@ const ProfilePage = () => {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [newAddress, setNewAddress] = useState({ full_name: '', line1: '', line2: '', city: '', state: '', pincode: '', phone: '', is_default: false });
+  const [newPayment, setNewPayment] = useState({ brand: 'Visa', last4: '', exp_month: '', exp_year: '', is_default: false });
   const [loading, setLoading] = useState(true);
 
   const { token, handleLogout, loading: authLoading } = useAuth();
@@ -103,12 +105,34 @@ const ProfilePage = () => {
   };
 
   const handleDeleteAddress = async (id) => {
+    if (!window.confirm('Erase this logistics point?')) return;
     try {
-      const res = await profileApi.deleteAddress(id);
-      if (res.success) setAddresses(prev => prev.filter(a => a.id !== id));
-    } catch (err) {
-      console.error('Failed to delete address:', err);
+      await profileApi.deleteAddress(id);
+      setAddresses(prev => prev.filter(a => a.id !== id));
+    } catch (err) { console.error('Delete failed:', err); }
+  };
+
+  const handleAddPayment = async () => {
+    if (!newPayment.last4 || !newPayment.exp_month || !newPayment.exp_year) {
+        alert('All gear fields required for initialization');
+        return;
     }
+    try {
+      const res = await profileApi.addPaymentMethod(newPayment);
+      if (res.success) {
+        setPayments(prev => [...prev.filter(p => !newPayment.is_default || !p.is_default), res.data]);
+        setShowPaymentForm(false);
+        setNewPayment({ brand: 'Visa', last4: '', exp_month: '', exp_year: '', is_default: false });
+      }
+    } catch (err) { console.error('Add payment failed:', err); }
+  };
+
+  const handleDeletePayment = async (id) => {
+    if (!window.confirm('Deactivate this financial chip?')) return;
+    try {
+      await profileApi.deletePaymentMethod(id);
+      setPayments(prev => prev.filter(p => p.id !== id));
+    } catch (err) { console.error('Delete failed:', err); }
   };
 
   const handleAddAddress = async () => {
@@ -345,31 +369,66 @@ const ProfilePage = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   {payments.map(pm => (
-                     <div key={pm.id} className={`bg-[#0D1B2A] rounded-2xl p-8 relative overflow-hidden group border-b-4 ${pm.is_default ? 'border-[#00C896]' : 'border-white/5 shadow-sm'}`}>
-                        <div className="absolute top-0 right-0 p-4 text-[#00C896]/20 group-hover:text-[#00C896]/50 transition-colors">
-                           <CreditCard size={48} strokeWidth={1} />
-                        </div>
-                        <div className="relative z-10">
-                           <p className="text-white/30 font-heading font-black text-[10px] uppercase tracking-widest mb-6">{pm.brand} ELITE CHIP</p>
-                           <p className="text-white font-heading font-black text-xl tracking-[0.3em] mb-8">•••• •••• •••• {pm.last4}</p>
-                           <div className="flex justify-between items-end">
-                              <div>
-                                 <p className="text-white/20 text-[8px] uppercase font-heading font-black tracking-widest mb-1">Expiration</p>
-                                 <p className="text-white font-heading font-black text-xs tracking-widest">{pm.exp_month}/{pm.exp_year}</p>
-                              </div>
-                              {pm.is_default && <span className="text-[9px] font-heading font-black bg-[#00C896] text-[#0D1B2A] px-3 py-1 rounded-full uppercase">Primary Activation</span>}
-                           </div>
-                        </div>
-                     </div>
-                   ))}
-                   
-                   <button className="border-4 border-dashed border-gray-100 rounded-2xl p-8 flex flex-col items-center justify-center gap-4 text-gray-200 hover:border-[#00C896] hover:text-[#00C896] transition-all group">
-                      <div className="w-14 h-14 bg-gray-50 rounded-[1.5rem] flex items-center justify-center group-hover:bg-[#00C896]/10 transition-all">
-                         <Plus size={32} />
+                    {payments.map(pm => (
+                      <div key={pm.id} className={`bg-[#0D1B2A] rounded-2xl p-8 relative overflow-hidden group border-b-4 ${pm.is_default ? 'border-[#00C896]' : 'border-white/5 shadow-sm'}`}>
+                         <div className="absolute top-0 right-0 p-4 text-[#00C896]/20 group-hover:text-[#00C896]/50 transition-colors flex gap-2">
+                            <button onClick={() => handleDeletePayment(pm.id)} className="bg-red-500/20 p-2 rounded-lg hover:bg-red-500 hover:text-white transition-all border-none cursor-pointer">
+                                <Trash2 size={16} />
+                            </button>
+                            <CreditCard size={48} strokeWidth={1} />
+                         </div>
+                         <div className="relative z-10">
+                            <p className="text-white/30 font-heading font-black text-[10px] uppercase tracking-widest mb-6">{pm.brand} ELITE CHIP</p>
+                            <p className="text-white font-heading font-black text-xl tracking-[0.3em] mb-8">•••• •••• •••• {pm.last4}</p>
+                            <div className="flex justify-between items-end">
+                               <div>
+                                  <p className="text-white/20 text-[8px] uppercase font-heading font-black tracking-widest mb-1">Expiration</p>
+                                  <p className="text-white font-heading font-black text-xs tracking-widest">{pm.exp_month}/{pm.exp_year}</p>
+                               </div>
+                               {pm.is_default && <span className="text-[9px] font-heading font-black bg-[#00C896] text-[#0D1B2A] px-3 py-1 rounded-full uppercase">Primary Activation</span>}
+                            </div>
+                         </div>
                       </div>
-                      <span className="font-heading font-black text-xs uppercase tracking-[0.2em]">Authorize New Channel</span>
-                   </button>
+                    ))}
+                    
+                    {!showPaymentForm && (
+                        <button onClick={() => setShowPaymentForm(true)} className="border-4 border-dashed border-gray-100 rounded-2xl p-8 flex flex-col items-center justify-center gap-4 text-gray-200 hover:border-[#00C896] hover:text-[#00C896] transition-all group cursor-pointer bg-none">
+                            <div className="w-14 h-14 bg-gray-50 rounded-[1.5rem] flex items-center justify-center group-hover:bg-[#00C896]/10 transition-all">
+                                <Plus size={32} />
+                            </div>
+                            <span className="font-heading font-black text-xs uppercase tracking-widest">Initialize New Chip</span>
+                        </button>
+                    )}
+
+                    {showPaymentForm && (
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="col-span-1 md:col-span-2 bg-gray-50 p-10 rounded-[2.5rem] border-2 border-[#00C896]/20">
+                             <h3 className="font-heading font-black text-xs uppercase tracking-[0.2em] text-[#00C896] mb-8">Initialize Secure Token</h3>
+                             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-heading font-black uppercase text-gray-300">Carrier</label>
+                                    <select value={newPayment.brand} onChange={e => setNewPayment({...newPayment, brand: e.target.value})} className="w-full bg-white border-2 border-transparent focus:border-[#00C896] outline-none px-6 py-4 rounded-xl font-heading font-black uppercase text-xs">
+                                        <option>Visa</option><option>Mastercard</option><option>Amex</option><option>Rupay</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-heading font-black uppercase text-gray-300">Last 4 Digits</label>
+                                    <input type="text" maxLength="4" placeholder="0000" value={newPayment.last4} onChange={e => setNewPayment({...newPayment, last4: e.target.value.replace(/\D/g,'')})} className="w-full bg-white border-2 border-transparent focus:border-[#00C896] outline-none px-6 py-4 rounded-xl font-heading font-black uppercase text-xs" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-heading font-black uppercase text-gray-300">Exp Month</label>
+                                    <input type="text" maxLength="2" placeholder="MM" value={newPayment.exp_month} onChange={e => setNewPayment({...newPayment, exp_month: e.target.value.replace(/\D/g,'')})} className="w-full bg-white border-2 border-transparent focus:border-[#00C896] outline-none px-6 py-4 rounded-xl font-heading font-black uppercase text-xs" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-heading font-black uppercase text-gray-300">Exp Year</label>
+                                    <input type="text" maxLength="4" placeholder="YYYY" value={newPayment.exp_year} onChange={e => setNewPayment({...newPayment, exp_year: e.target.value.replace(/\D/g,'')})} className="w-full bg-white border-2 border-transparent focus:border-[#00C896] outline-none px-6 py-4 rounded-xl font-heading font-black uppercase text-xs" />
+                                </div>
+                             </div>
+                             <div className="flex gap-6 mt-12">
+                                <button onClick={handleAddPayment} className="bg-[#00C896] text-[#0D1B2A] px-10 py-4 rounded-xl font-heading font-black uppercase text-xs tracking-widest hover:shadow-[0_0_20px_rgba(0,200,150,0.5)] transition-all">Authorize Vault</button>
+                                <button onClick={() => setShowPaymentForm(false)} className="text-gray-300 font-heading font-black text-xs uppercase tracking-widest hover:text-red-500">Decline</button>
+                             </div>
+                        </motion.div>
+                    )}
                 </div>
                 
                 <div className="mt-16 bg-[#ff4d4d]/5 border border-[#ff4d4d]/10 p-6 rounded-2xl flex gap-4 items-start">

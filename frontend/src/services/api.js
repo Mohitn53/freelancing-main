@@ -93,4 +93,8 @@ export const profileApi = {
     request(`/api/profile/addresses/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   deleteAddress: (id) => request(`/api/profile/addresses/${id}`, { method: 'DELETE' }),
   paymentMethods: () => request('/api/profile/payment-methods'),
+  addPaymentMethod: (body) =>
+    request('/api/profile/payment-methods', { method: 'POST', body: JSON.stringify(body) }),
+  deletePaymentMethod: (id) =>
+    request(`/api/profile/payment-methods/${id}`, { method: 'DELETE' }),
 };

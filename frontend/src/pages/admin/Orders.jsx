@@ -9,7 +9,7 @@ import { orderApi } from '../../services/api';
 
 const statusConfigs = {
   pending: { bg: 'bg-yellow-500/10', text: 'text-yellow-600', border: 'border-yellow-200' },
-  packed: { bg: 'bg-blue-500/10', text: 'text-blue-600', border: 'border-blue-200' },
+  processing: { bg: 'bg-blue-500/10', text: 'text-blue-600', border: 'border-blue-200' },
   shipped: { bg: 'bg-indigo-500/10', text: 'text-indigo-600', border: 'border-indigo-200' },
   delivered: { bg: 'bg-[#00C896]/10', text: 'text-[#00C896]', border: 'border-[#009b74]/20' },
   cancelled: { bg: 'bg-red-500/10', text: 'text-red-500', border: 'border-red-200' },
@@ -66,7 +66,7 @@ const AdminOrders = () => {
           {[
             { label: 'Deployment Total', value: orders.length, color: 'text-[#0D1B2A]', icon: Package },
             { label: 'Pending Queue', value: orders.filter(o => o.status === 'pending').length, color: 'text-yellow-600', icon: Clock },
-            { label: 'Active Transit', value: orders.filter(o => o.status === 'shipped').length, color: 'text-indigo-600', icon: Truck },
+            { label: 'Active Transit', value: orders.filter(o => o.status === 'shipped' || o.status === 'processing').length, color: 'text-indigo-600', icon: Truck },
             { label: 'Victories (Delivered)', value: orders.filter(o => o.status === 'delivered').length, color: 'text-[#00C896]', icon: Trophy },
           ].map((s, i) => (
             <div key={i} className="bg-white p-8 rounded-[2rem] border-2 border-gray-50 shadow-sm relative overflow-hidden group">
@@ -132,7 +132,7 @@ const AdminOrders = () => {
                                     onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
                                 >
                                     <option value="pending">PENDING</option>
-                                    <option value="packed">PACKED</option>
+                                    <option value="processing">GEAR SECURED (PACKED)</option>
                                     <option value="shipped">SHIPPED</option>
                                     <option value="delivered">DELIVERED</option>
                                     <option value="cancelled">CANCELLED</option>
